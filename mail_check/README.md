@@ -4,11 +4,11 @@ A Flutter package for both android, iOS and Web. which provides validate email a
 
 ## Screenshots
 
-[//]: # (<img src="https://github.com/parth58/Social-SignIn-Buttons/blob/master/screenshots/ss.png" height="400em" width="225em" />)
+<img src="https://github.com/iOSHiepLe/mail_check/blob/main/mail_check/screenshots/email_suggestion.png" height="400em" width="225em" />
 
 ## Usage
 
-[Example](https://github.com/parth58/Social-SignIn-Buttons/blob/master/example/lib/main.dart)
+[Example](https://github.com/iOSHiepLe/mail_check/blob/main/mail_check/example/lib/main.dart)
 
 To use this package :
 
@@ -44,16 +44,28 @@ void _checkEmail() {
 
 ```
 
-### List Of Support Domains
-* 
-* Buttons.Facebook
-* Buttons.Microsoft
-* Buttons.Apple
-* Buttons.Github
-* Buttons.LinkedIn
-* Buttons.Twitter
-* Buttons.Email
-
+### List Of Support Domains default
+* yahoo.com
+* google.com
+* hotmail.com
+* gmail.com
+* me.com
+* aol.com
+* mac.com
+* live.com
+* comcast.net
+* googlemail.com
+* msn.com
+* hotmail.co.uk
+* yahoo.co.uk
+* facebook.com
+* verizon.net
+* sbcglobal.net
+* att.net
+* mx.com
+* ail.com
+* utlook.com
+* cloud.com
 
 # License
 Copyright (c) 2023 HiepLe
