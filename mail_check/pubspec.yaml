@@ -1,7 +1,6 @@
 name: mail_check
 description: A Flutter package for both android, iOS and web. which provides email validate and make email suggestion.
 version: 0.0.1
-author: HiepLe <hieplemobile@gmail.com>
 homepage: https://github.com/iOSHiepLe/mail_check
 
 environment:
