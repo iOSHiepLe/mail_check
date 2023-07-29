@@ -12,7 +12,7 @@ A Flutter package for both android, iOS and Web. which provides validate email a
 
 To use this package :
 
-* add the dependency to your [pubspec.yaml](https://github.com/parth58/Social-SignIn-Buttons/blob/master/pubspec.yaml) file.
+* add the dependency to your [pubspec.yaml](https://github.com/iOSHiepLe/mail_check/blob/main/mail_check/pubspec.yaml) file.
 
 ```yaml
   dependencies:
