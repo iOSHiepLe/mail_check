@@ -1,6 +1,7 @@
 library mail_check;
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:mail_check/ascii_folder.dart';
 
 class MailCheckResponse {
   bool isValidEmail;
@@ -20,6 +21,8 @@ class MailCheckResult {
 class MailCheck {
   static const int domainThreshold = 4;
   static const int topLevelThreshold = 3;
+  static const String defaultRegex =
+      r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
 
   static final List<String> defaultDomains = [
     "yahoo.com",
@@ -58,42 +61,58 @@ class MailCheck {
     "ca"
   ];
 
+  static String _regex = "";
+
   static void run(String email,
-      {List<String>? customDomains,
+      {String? customRegex,
+      List<String>? customDomains,
       List<String>? customTopLevelDomains,
       int Function(String, String)? customDistanceFunction,
       Function(MailCheckResponse)? callBack}) {
-    List<String> domains = customDomains ?? defaultDomains;
+    List<String> domains = mergeArrays(defaultDomains, customDomains ?? []);
     List<String> topLevelDomains =
-        customTopLevelDomains ?? defaultTopLevelDomains;
+        mergeArrays(defaultTopLevelDomains, customTopLevelDomains ?? []);
+    _regex = customRegex ?? defaultRegex;
     int Function(String, String)? distanceFunction = customDistanceFunction;
 
     MailCheckResponse result = suggest(
+      email,
       encodeEmail(email),
       domains,
       topLevelDomains,
       distanceFunction,
     );
-    debugPrint("Result => $result");
-    // MailCheckResponse response =
-    //     MailCheckResponse(isValidEmail: result == null, suggestion: result);
 
     callBack?.call(result);
   }
 
   static MailCheckResponse suggest(
+    String originEmail,
     String email,
     List<String> domains,
     List<String> topLevelDomains,
     int Function(String, String)? distanceFunction,
   ) {
     email = email.toLowerCase();
-
-    EmailParts? emailParts = splitEmail(email);
-    if (emailParts == null) {
+    // Check Email regex
+    if (!isValidEmail(email)) {
       return MailCheckResponse(isValidEmail: false);
     }
 
+    // Split email
+    EmailParts? emailParts = splitEmail(email);
+    EmailParts? originEmailParts = splitEmail(originEmail);
+    if (emailParts == null || originEmailParts == null) {
+      return MailCheckResponse(isValidEmail: false);
+    }
+
+    debugPrint("Test => ${emailParts.address}");
+    debugPrint(
+        "Email: ${originEmailParts.address} => Result: ${ASCIIFolder.foldMaintaining(originEmailParts.address)}");
+
+    String closestAddress =
+        ASCIIFolder.foldMaintaining(originEmailParts.address);
+    bool isSuggestAddress = closestAddress != originEmailParts.address;
     String? closestDomain = findClosestDomain(
       emailParts.domain,
       domains,
@@ -106,9 +125,11 @@ class MailCheck {
       return MailCheckResponse(
         isValidEmail: true,
         suggestion: MailCheckResult(
-            address: emailParts.address,
+            address:
+                isSuggestAddress ? closestAddress : originEmailParts.address,
             domain: closestDomain,
-            fullEmail: '${emailParts.address}@$closestDomain'),
+            fullEmail:
+                '${isSuggestAddress ? closestAddress : originEmailParts.address}@$closestDomain'),
       );
     } else {
       // The email address does not closely match one of the supplied domains
@@ -129,10 +150,23 @@ class MailCheck {
         return MailCheckResponse(
           isValidEmail: true,
           suggestion: MailCheckResult(
-              address: emailParts.address,
+              address:
+                  isSuggestAddress ? closestAddress : originEmailParts.address,
               domain: closestDomain,
-              fullEmail: '${emailParts.address}@$closestDomain'),
+              fullEmail:
+                  '${isSuggestAddress ? closestAddress : originEmailParts.address}@$closestDomain'),
         );
+      } else {
+        if (closestAddress != originEmailParts.address) {
+          return MailCheckResponse(
+            isValidEmail: true,
+            suggestion: MailCheckResult(
+              address: closestAddress,
+              domain: emailParts.domain,
+              fullEmail: '$closestAddress@${emailParts.domain}',
+            ),
+          );
+        }
       }
     }
     // The email address exactly matches one of the supplied domains, does not closely
@@ -271,6 +305,16 @@ class MailCheck {
         .replaceAll('%7D', '}')
         .replaceAll('%40', '@');
     return result;
+  }
+
+  static List<String> mergeArrays(List<String> array1, List<String> array2) {
+    Set<String> mergedSet = Set<String>.from(array1)..addAll(array2);
+
+    return mergedSet.toList();
+  }
+
+  static bool isValidEmail(String email) {
+    return RegExp(_regex).hasMatch(email);
   }
 }
 
