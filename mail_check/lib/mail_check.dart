@@ -1,6 +1,5 @@
 library mail_check;
 
-import 'package:flutter/material.dart';
 import 'package:mail_check/ascii_folder.dart';
 
 class MailCheckResponse {
@@ -14,9 +13,16 @@ class MailCheckResult {
   String? address;
   String? domain;
   String? fullEmail;
+  SuggestionType suggestionType;
 
-  MailCheckResult({this.address, this.domain, this.fullEmail});
+  MailCheckResult(
+      {this.address,
+      this.domain,
+      this.fullEmail,
+      this.suggestionType = SuggestionType.notFoundDomain});
 }
+
+enum SuggestionType { hasSpecialCharacter, notFoundDomain }
 
 class MailCheck {
   static const int domainThreshold = 4;
@@ -77,7 +83,6 @@ class MailCheck {
 
     MailCheckResponse result = suggest(
       email,
-      encodeEmail(email),
       domains,
       topLevelDomains,
       distanceFunction,
@@ -87,7 +92,6 @@ class MailCheck {
   }
 
   static MailCheckResponse suggest(
-    String originEmail,
     String email,
     List<String> domains,
     List<String> topLevelDomains,
@@ -99,20 +103,13 @@ class MailCheck {
       return MailCheckResponse(isValidEmail: false);
     }
 
-    // Split email
     EmailParts? emailParts = splitEmail(email);
-    EmailParts? originEmailParts = splitEmail(originEmail);
-    if (emailParts == null || originEmailParts == null) {
+    if (emailParts == null) {
       return MailCheckResponse(isValidEmail: false);
     }
 
-    debugPrint("Test => ${emailParts.address}");
-    debugPrint(
-        "Email: ${originEmailParts.address} => Result: ${ASCIIFolder.foldMaintaining(originEmailParts.address)}");
-
-    String closestAddress =
-        ASCIIFolder.foldMaintaining(originEmailParts.address);
-    bool isSuggestAddress = closestAddress != originEmailParts.address;
+    String closestAddress = ASCIIFolder.foldMaintaining(emailParts.address);
+    bool isSuggestAddress = closestAddress != emailParts.address;
     String? closestDomain = findClosestDomain(
       emailParts.domain,
       domains,
@@ -122,14 +119,19 @@ class MailCheck {
 
     if (closestDomain != null && closestDomain != emailParts.domain) {
       // The email address closely matches one of the supplied domains; return a suggestion
+      String nonAsciiDomain = ASCIIFolder.foldMaintaining(closestDomain);
+      final isContainSCharacter =
+          isSuggestAddress || (nonAsciiDomain != closestDomain);
       return MailCheckResponse(
         isValidEmail: true,
         suggestion: MailCheckResult(
-            address:
-                isSuggestAddress ? closestAddress : originEmailParts.address,
-            domain: closestDomain,
+            address: isSuggestAddress ? closestAddress : emailParts.address,
+            domain: nonAsciiDomain,
             fullEmail:
-                '${isSuggestAddress ? closestAddress : originEmailParts.address}@$closestDomain'),
+                '${isSuggestAddress ? closestAddress : emailParts.address}@$nonAsciiDomain',
+            suggestionType: isContainSCharacter
+                ? SuggestionType.hasSpecialCharacter
+                : SuggestionType.notFoundDomain),
       );
     } else {
       // The email address does not closely match one of the supplied domains
@@ -147,24 +149,34 @@ class MailCheck {
         closestDomain =
             domain.substring(0, domain.lastIndexOf(emailParts.topLevelDomain)) +
                 closestTopLevelDomain;
+        String nonAsciiDomain = ASCIIFolder.foldMaintaining(closestDomain);
+        final isContainSCharacter =
+            isSuggestAddress || (nonAsciiDomain != closestDomain);
         return MailCheckResponse(
           isValidEmail: true,
           suggestion: MailCheckResult(
-              address:
-                  isSuggestAddress ? closestAddress : originEmailParts.address,
-              domain: closestDomain,
+              address: isSuggestAddress ? closestAddress : emailParts.address,
+              domain: nonAsciiDomain,
               fullEmail:
-                  '${isSuggestAddress ? closestAddress : originEmailParts.address}@$closestDomain'),
+                  '${isSuggestAddress ? closestAddress : emailParts.address}@$nonAsciiDomain',
+              suggestionType: isContainSCharacter
+                  ? SuggestionType.hasSpecialCharacter
+                  : SuggestionType.notFoundDomain),
         );
       } else {
-        if (closestAddress != originEmailParts.address) {
+        String nonAsciiDomain = ASCIIFolder.foldMaintaining(emailParts.domain);
+        final isContainSCharacter =
+            isSuggestAddress || (nonAsciiDomain != closestDomain);
+        if (isContainSCharacter) {
           return MailCheckResponse(
             isValidEmail: true,
             suggestion: MailCheckResult(
-              address: closestAddress,
-              domain: emailParts.domain,
-              fullEmail: '$closestAddress@${emailParts.domain}',
-            ),
+                address: closestAddress,
+                domain: nonAsciiDomain,
+                fullEmail: '$closestAddress@$nonAsciiDomain',
+                suggestionType: isContainSCharacter
+                    ? SuggestionType.hasSpecialCharacter
+                    : SuggestionType.notFoundDomain),
           );
         }
       }
