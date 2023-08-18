@@ -6,5 +6,8 @@
 * Enhance suggestion email
 * Support check email validation with regex
 
-## [0.0.4] - 9 Aug 2023
+## [0.0.4] - 17 Aug 2023
 * Support warning reason (exist special characters or not found domain)
+
+## [0.0.5] - 18 Aug 2023
+* Fix bug with domain wrong
