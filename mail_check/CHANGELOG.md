@@ -11,3 +11,6 @@
 
 ## [0.0.5] - 18 Aug 2023
 * Fix bug with domain wrong
+
+## [0.0.6] - 23 Aug 2023
+* Change dart version
