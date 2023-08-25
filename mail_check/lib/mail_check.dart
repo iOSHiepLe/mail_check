@@ -136,7 +136,6 @@ class MailCheck {
                 : SuggestionType.notFoundDomain),
       );
     } else {
-      debugPrint("Test => 111");
       // The email address does not closely match one of the supplied domains
       String? closestTopLevelDomain = findClosestDomain(
         emailParts.topLevelDomain,
@@ -147,7 +146,6 @@ class MailCheck {
 
       if (closestTopLevelDomain != null &&
           closestTopLevelDomain != emailParts.topLevelDomain) {
-        debugPrint("Test => 222");
         // The email address may have a misspelled top-level domain; return a suggestion
         String domain = emailParts.domain;
         closestDomain =
@@ -168,12 +166,9 @@ class MailCheck {
                   : SuggestionType.notFoundDomain),
         );
       } else {
-        debugPrint("Test => 333");
         String nonAsciiDomain = ASCIIFolder.foldMaintaining(emailParts.domain);
         final isContainSCharacter =
             isSuggestAddress || (nonAsciiDomain != emailParts.domain);
-        debugPrint(
-            "Test => 333 => closestDomain: $closestDomain - nonAsciiDomain: $nonAsciiDomain");
         if (isContainSCharacter) {
           return MailCheckResponse(
             isValidEmail: true,

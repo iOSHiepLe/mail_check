@@ -9,17 +9,24 @@ class ASCIIFolder {
 
   static String _fold(String str, String Function(String) fallback) {
     if (str is num) return '$str';
-
-    return String.fromCharCodes(str.runes.map((rune) {
-      if (rune < 128) {
-        return rune;
-      } else {
-        final replacement = _mapping[rune];
-        return replacement != null
-            ? replacement.runes.first
-            : fallback(String.fromCharCode(rune)).codeUnitAt(0);
-      }
-    }));
+    final runesTest = str.runes
+        .map((rune) {
+          if (rune < 128) {
+            return rune;
+          } else {
+            final replacement = _mapping[rune];
+            if (replacement != null) {
+              return replacement.runes.first;
+            } else {
+              return String.fromCharCode(rune).codeUnits.length > 1
+                  ? String.fromCharCode(rune).codeUnitAt(0)
+                  : -1;
+            }
+          }
+        })
+        .where((element) => element != -1)
+        .toList();
+    return String.fromCharCodes(runesTest);
   }
 
   static final Map<int, String> _mapping = {

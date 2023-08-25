@@ -14,3 +14,6 @@
 
 ## [0.0.6] - 23 Aug 2023
 * Change dart version
+
+## [0.0.7] - 25 Aug 2023
+* More check with nonAscii from LabanKey
