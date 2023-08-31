@@ -74,6 +74,7 @@ class MailCheck {
       {String? customRegex,
       List<String>? customDomains,
       List<String>? customTopLevelDomains,
+      double minDistancePercent = 60.0,
       int Function(String, String)? customDistanceFunction,
       Function(MailCheckResponse)? callBack}) {
     List<String> domains = mergeArrays(defaultDomains, customDomains ?? []);
@@ -86,6 +87,7 @@ class MailCheck {
       email,
       domains,
       topLevelDomains,
+      minDistancePercent,
       distanceFunction,
     );
 
@@ -96,6 +98,7 @@ class MailCheck {
     String email,
     List<String> domains,
     List<String> topLevelDomains,
+    double minDistancePercent,
     int Function(String, String)? distanceFunction,
   ) {
     email = email.toLowerCase();
@@ -115,6 +118,7 @@ class MailCheck {
       emailParts.domain,
       domains,
       distanceFunction,
+      minDistancePercent,
       domainThreshold,
     );
 
@@ -141,9 +145,12 @@ class MailCheck {
         emailParts.topLevelDomain,
         topLevelDomains,
         distanceFunction,
+        minDistancePercent,
         topLevelThreshold,
       );
 
+      debugPrint(
+          "Test => ${emailParts.topLevelDomain} => $closestTopLevelDomain");
       if (closestTopLevelDomain != null &&
           closestTopLevelDomain != emailParts.topLevelDomain) {
         // The email address may have a misspelled top-level domain; return a suggestion
@@ -189,6 +196,7 @@ class MailCheck {
     return MailCheckResponse(isValidEmail: true);
   }
 
+  /*
   static String? findClosestDomain(
     String domain,
     List<String> domains,
@@ -199,6 +207,7 @@ class MailCheck {
 
     int dist;
     int minDist = 99;
+
     String? closestDomain;
 
     if (domain.isEmpty || domains.isEmpty) {
@@ -207,26 +216,67 @@ class MailCheck {
 
     distanceFunction ??= sift3Distance;
 
+    debugPrint("Closest => domains length => ${domains.length}");
     for (int i = 0; i < domains.length; i++) {
       if (domain == domains[i]) {
+        debugPrint("Closest => $domain");
         return domain;
       }
+      debugPrint("Closest => dist => ${domains[i]}");
       dist = distanceFunction(domain, domains[i]);
+      debugPrint("Closest => dist => $dist");
       if (dist < minDist) {
         minDist = dist;
         closestDomain = domains[i];
       }
     }
 
+    debugPrint("Closest => notfound => $domain");
     if (minDist <= threshold && closestDomain != null) {
       return closestDomain;
     } else {
       return null;
     }
   }
+  */
+
+  static String? findClosestDomain(
+    String domain,
+    List<String> domains,
+    int Function(String, String)? distanceFunction,
+    double minDistancePercent,
+    int threshold,
+  ) {
+    threshold = threshold;
+
+    double dist;
+    double minDist = minDistancePercent;
+
+    String? closestDomain;
+    if (domain.isEmpty || domains.isEmpty) {
+      return null;
+    }
+
+    distanceFunction ??= sift3Distance;
+
+    debugPrint("Closest => domains length => ${domains.length}");
+    for (int i = 0; i < domains.length; i++) {
+      if (domain == domains[i]) {
+        debugPrint("Closest => $domain");
+        return domain;
+      }
+
+      dist = calculateDistancePercent(domain, domains[i]);
+      if (dist >= minDist) {
+        minDist = dist;
+        closestDomain = domains[i];
+      }
+    }
+
+    return closestDomain;
+  }
 
   static int sift3Distance(String s1, String s2) {
-    // Sift3: http://siderite.blogspot.com/2007/04/super-fast-and-accurate-string-distance.html
     if (s1.isEmpty) {
       if (s2.isEmpty) {
         return 0;
@@ -265,6 +315,40 @@ class MailCheck {
       c++;
     }
     return (s1.length + s2.length) ~/ 2 - lcs;
+  }
+
+  static double calculateDistancePercent(String s1, String s2) {
+    int calculateLevenshteinDistance(String a, String b) {
+      final int m = a.length, n = b.length;
+      List<List<int>> dp =
+          List.generate(m + 1, (_) => List<int>.filled(n + 1, 0));
+
+      for (int i = 1; i <= m; i++) {
+        dp[i][0] = i;
+      }
+
+      for (int j = 1; j <= n; j++) {
+        dp[0][j] = j;
+      }
+
+      for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+          int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+          dp[i][j] = <int>[
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost
+          ].reduce((int min, int element) => element < min ? element : min);
+        }
+      }
+
+      return dp[m][n];
+    }
+
+    int distance = calculateLevenshteinDistance(s1, s2);
+    int maxLength = s1.length > s2.length ? s1.length : s2.length;
+    double distancePercent = ((maxLength - distance) / maxLength) * 100;
+    return distancePercent;
   }
 
   static EmailParts? splitEmail(String email) {

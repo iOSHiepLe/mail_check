@@ -17,3 +17,7 @@
 
 ## [0.0.7] - 25 Aug 2023
 * More check with nonAscii from LabanKey
+
+## [1.0.0] - 31 Aug 2023
+* Change algorithm make top domain
+* Make suggestion with minDistance 60% (Can change minDistance by argument)
