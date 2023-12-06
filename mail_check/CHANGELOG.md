@@ -21,3 +21,6 @@
 ## [1.0.0] - 31 Aug 2023
 * Change algorithm make top domain
 * Make suggestion with minDistance 60% (Can change minDistance by argument)
+
+## [1.0.1] - 6 Dec 2023
+* Add more domain (https://gist.github.com/ammarshah/f5c2624d767f91a7cbdc4e54db8dd0bf)

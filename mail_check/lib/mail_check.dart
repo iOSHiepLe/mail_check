@@ -1,6 +1,7 @@
 library mail_check;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:mail_check/ascii_folder.dart';
 
 class MailCheckResponse {
@@ -26,12 +27,30 @@ class MailCheckResult {
 enum SuggestionType { hasSpecialCharacter, notFoundDomain }
 
 class MailCheck {
+  static var shared = MailCheck._init();
+  MailCheck._init() {
+    _loadDomains();
+  }
+
+  Future<void> _loadDomains() async {
+    try {
+      var domainStr = await rootBundle.loadString(
+          'packages/mail_check/assets/all_email_provider_domains.txt');
+
+      List<String> domainList = domainStr.split('\n');
+      allDomains.addAll(domainList);
+    } catch (e) {
+      debugPrint("load domains error => $e");
+    }
+  }
+
+  List<String> allDomains = [];
   static const int domainThreshold = 4;
   static const int topLevelThreshold = 3;
   static const String defaultRegex =
       r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
 
-  static final List<String> defaultDomains = [
+  final List<String> defaultDomains = [
     "yahoo.com",
     "google.com",
     "hotmail.com",
@@ -55,7 +74,7 @@ class MailCheck {
     "icloud.com"
   ];
 
-  static final List<String> defaultTopLevelDomains = [
+  final List<String> defaultTopLevelDomains = [
     "co.jp",
     "co.uk",
     "com",
@@ -68,16 +87,17 @@ class MailCheck {
     "ca"
   ];
 
-  static String _regex = "";
+  String _regex = "";
 
-  static void run(String email,
+  void run(String email,
       {String? customRegex,
       List<String>? customDomains,
       List<String>? customTopLevelDomains,
       double minDistancePercent = 60.0,
       int Function(String, String)? customDistanceFunction,
       Function(MailCheckResponse)? callBack}) {
-    List<String> domains = mergeArrays(defaultDomains, customDomains ?? []);
+    allDomains = mergeArrays(
+        allDomains, mergeArrays(defaultDomains, customDomains ?? []));
     List<String> topLevelDomains =
         mergeArrays(defaultTopLevelDomains, customTopLevelDomains ?? []);
     _regex = customRegex ?? defaultRegex;
@@ -85,7 +105,7 @@ class MailCheck {
 
     MailCheckResponse result = suggest(
       email,
-      domains,
+      allDomains,
       topLevelDomains,
       minDistancePercent,
       distanceFunction,
@@ -94,7 +114,7 @@ class MailCheck {
     callBack?.call(result);
   }
 
-  static MailCheckResponse suggest(
+  MailCheckResponse suggest(
     String email,
     List<String> domains,
     List<String> topLevelDomains,
@@ -124,7 +144,6 @@ class MailCheck {
 
     if (closestDomain != null && closestDomain != emailParts.domain) {
       // The email address closely matches one of the supplied domains; return a suggestion
-      debugPrint("Test => 000");
       String nonAsciiDomain = ASCIIFolder.foldMaintaining(closestDomain);
       final isContainSCharacter =
           isSuggestAddress || (nonAsciiDomain != closestDomain);
@@ -149,8 +168,6 @@ class MailCheck {
         topLevelThreshold,
       );
 
-      debugPrint(
-          "Test => ${emailParts.topLevelDomain} => $closestTopLevelDomain");
       if (closestTopLevelDomain != null &&
           closestTopLevelDomain != emailParts.topLevelDomain) {
         // The email address may have a misspelled top-level domain; return a suggestion
@@ -196,51 +213,7 @@ class MailCheck {
     return MailCheckResponse(isValidEmail: true);
   }
 
-  /*
-  static String? findClosestDomain(
-    String domain,
-    List<String> domains,
-    int Function(String, String)? distanceFunction,
-    int threshold,
-  ) {
-    threshold = threshold;
-
-    int dist;
-    int minDist = 99;
-
-    String? closestDomain;
-
-    if (domain.isEmpty || domains.isEmpty) {
-      return null;
-    }
-
-    distanceFunction ??= sift3Distance;
-
-    debugPrint("Closest => domains length => ${domains.length}");
-    for (int i = 0; i < domains.length; i++) {
-      if (domain == domains[i]) {
-        debugPrint("Closest => $domain");
-        return domain;
-      }
-      debugPrint("Closest => dist => ${domains[i]}");
-      dist = distanceFunction(domain, domains[i]);
-      debugPrint("Closest => dist => $dist");
-      if (dist < minDist) {
-        minDist = dist;
-        closestDomain = domains[i];
-      }
-    }
-
-    debugPrint("Closest => notfound => $domain");
-    if (minDist <= threshold && closestDomain != null) {
-      return closestDomain;
-    } else {
-      return null;
-    }
-  }
-  */
-
-  static String? findClosestDomain(
+  String? findClosestDomain(
     String domain,
     List<String> domains,
     int Function(String, String)? distanceFunction,
@@ -258,11 +231,8 @@ class MailCheck {
     }
 
     distanceFunction ??= sift3Distance;
-
-    debugPrint("Closest => domains length => ${domains.length}");
     for (int i = 0; i < domains.length; i++) {
       if (domain == domains[i]) {
-        debugPrint("Closest => $domain");
         return domain;
       }
 
@@ -276,7 +246,7 @@ class MailCheck {
     return closestDomain;
   }
 
-  static int sift3Distance(String s1, String s2) {
+  int sift3Distance(String s1, String s2) {
     if (s1.isEmpty) {
       if (s2.isEmpty) {
         return 0;
@@ -317,7 +287,7 @@ class MailCheck {
     return (s1.length + s2.length) ~/ 2 - lcs;
   }
 
-  static double calculateDistancePercent(String s1, String s2) {
+  double calculateDistancePercent(String s1, String s2) {
     int calculateLevenshteinDistance(String a, String b) {
       final int m = a.length, n = b.length;
       List<List<int>> dp =
@@ -351,7 +321,7 @@ class MailCheck {
     return distancePercent;
   }
 
-  static EmailParts? splitEmail(String email) {
+  EmailParts? splitEmail(String email) {
     List<String> parts = email.trim().split('@');
 
     if (parts.length < 2) {
@@ -391,7 +361,7 @@ class MailCheck {
     );
   }
 
-  static String encodeEmail(String email) {
+  String encodeEmail(String email) {
     String result = Uri.encodeComponent(email);
     result = result
         .replaceAll('%20', ' ')
@@ -405,13 +375,13 @@ class MailCheck {
     return result;
   }
 
-  static List<String> mergeArrays(List<String> array1, List<String> array2) {
+  List<String> mergeArrays(List<String> array1, List<String> array2) {
     Set<String> mergedSet = Set<String>.from(array1)..addAll(array2);
 
     return mergedSet.toList();
   }
 
-  static bool isValidEmail(String email) {
+  bool isValidEmail(String email) {
     return RegExp(_regex).hasMatch(email);
   }
 }
