@@ -24,3 +24,9 @@
 
 ## [1.0.1] - 6 Dec 2023
 * Add more domain (https://gist.github.com/ammarshah/f5c2624d767f91a7cbdc4e54db8dd0bf)
+
+## [1.0.2] - 11 DEC 2023
+* fix bug non-specific package version (auto get latest version)
+
+## [2.0.0] - 11 DEC 2023
+* new version for new domains
