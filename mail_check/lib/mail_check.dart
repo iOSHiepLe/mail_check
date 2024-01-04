@@ -91,7 +91,7 @@ class MailCheck {
 
   String _regex = "";
 
-  void run(String email,
+  Future<void> run(String email,
       {String? customRegex,
       List<String>? customDomains,
       List<String>? customTopLevelDomains,
