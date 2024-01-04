@@ -36,3 +36,6 @@
 
 ## [2.0.2] - 4 Jan 2024
 * Change async function
+
+## [2.0.3] - 4 Jan 2024
+* Change async function

@@ -35,6 +35,12 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController controller = TextEditingController();
   String _message = "";
 
+  @override
+  void initState() {
+    super.initState();
+    MailCheck.shared.initial();
+  }
+
   void _checkEmail() {
     var email = controller.value.text;
     MailCheck.shared.run(email,

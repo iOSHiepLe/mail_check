@@ -30,19 +30,19 @@ class MailCheck {
   static var shared = MailCheck._init();
   MailCheck._init();
 
+  Future<void> initial() async {
+    await _loadDomains();
+  }
+
   Future<void> _loadDomains() async {
     try {
       var domainStr = await rootBundle.loadString(
           'packages/mail_check/assets/all_email_provider_domains.txt');
-      await _parseDomains(domainStr: domainStr);
+      List<String> domainList = domainStr.split('\n');
+      domainFiles.addAll(domainList);
     } catch (e) {
       debugPrint("load domains error => $e");
     }
-  }
-
-  Future<void> _parseDomains({required String domainStr}) async {
-    List<String> domainList = domainStr.split('\n');
-    domainFiles.addAll(domainList);
   }
 
   List<String> allDomains = [];
@@ -91,16 +91,13 @@ class MailCheck {
 
   String _regex = "";
 
-  Future<void> run(String email,
+  void run(String email,
       {String? customRegex,
       List<String>? customDomains,
       List<String>? customTopLevelDomains,
       double minDistancePercent = 60.0,
       int Function(String, String)? customDistanceFunction,
-      Function(MailCheckResponse)? callBack}) async {
-    if (domainFiles.isEmpty) {
-      await _loadDomains();
-    }
+      Function(MailCheckResponse)? callBack}) {
 
     allDomains = mergeArrays(
         domainFiles, mergeArrays(defaultDomains, customDomains ?? []));
@@ -147,8 +144,6 @@ class MailCheck {
       minDistancePercent,
       domainThreshold,
     );
-    debugPrint("Closest domain => $closestDomain");
-    debugPrint("emailParts domain => ${emailParts.domain}");
     if (allDomains.contains(emailParts.domain)) {
       return MailCheckResponse(isValidEmail: true);
     }
@@ -178,8 +173,7 @@ class MailCheck {
         minDistancePercent,
         topLevelThreshold,
       );
-      debugPrint("closestTopLevelDomain => $closestTopLevelDomain");
-      debugPrint("email closestTopLevelDomain => ${emailParts.topLevelDomain}");
+
       if (closestTopLevelDomain != null &&
           closestTopLevelDomain != emailParts.topLevelDomain) {
         // The email address may have a misspelled top-level domain; return a suggestion
