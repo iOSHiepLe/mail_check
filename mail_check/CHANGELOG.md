@@ -30,3 +30,6 @@
 
 ## [2.0.0] - 11 DEC 2023
 * new version for new domains
+
+## [2.0.1] - 4 Jan 2024
+* Fix bug load all domains

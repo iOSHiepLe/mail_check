@@ -28,23 +28,25 @@ enum SuggestionType { hasSpecialCharacter, notFoundDomain }
 
 class MailCheck {
   static var shared = MailCheck._init();
-  MailCheck._init() {
-    _loadDomains();
-  }
+  MailCheck._init();
 
   Future<void> _loadDomains() async {
     try {
       var domainStr = await rootBundle.loadString(
           'packages/mail_check/assets/all_email_provider_domains.txt');
-
-      List<String> domainList = domainStr.split('\n');
-      allDomains.addAll(domainList);
+      await _parseDomains(domainStr: domainStr);
     } catch (e) {
       debugPrint("load domains error => $e");
     }
   }
 
+  Future<void> _parseDomains({required String domainStr}) async {
+    List<String> domainList = domainStr.split('\n');
+    domainFiles.addAll(domainList);
+  }
+
   List<String> allDomains = [];
+  List<String> domainFiles = [];
   static const int domainThreshold = 4;
   static const int topLevelThreshold = 3;
   static const String defaultRegex =
@@ -95,9 +97,13 @@ class MailCheck {
       List<String>? customTopLevelDomains,
       double minDistancePercent = 60.0,
       int Function(String, String)? customDistanceFunction,
-      Function(MailCheckResponse)? callBack}) {
+      Function(MailCheckResponse)? callBack}) async {
+    if (domainFiles.isEmpty) {
+      await _loadDomains();
+    }
+
     allDomains = mergeArrays(
-        allDomains, mergeArrays(defaultDomains, customDomains ?? []));
+        domainFiles, mergeArrays(defaultDomains, customDomains ?? []));
     List<String> topLevelDomains =
         mergeArrays(defaultTopLevelDomains, customTopLevelDomains ?? []);
     _regex = customRegex ?? defaultRegex;
@@ -141,6 +147,11 @@ class MailCheck {
       minDistancePercent,
       domainThreshold,
     );
+    debugPrint("Closest domain => $closestDomain");
+    debugPrint("emailParts domain => ${emailParts.domain}");
+    if (allDomains.contains(emailParts.domain)) {
+      return MailCheckResponse(isValidEmail: true);
+    }
 
     if (closestDomain != null && closestDomain != emailParts.domain) {
       // The email address closely matches one of the supplied domains; return a suggestion
@@ -167,7 +178,8 @@ class MailCheck {
         minDistancePercent,
         topLevelThreshold,
       );
-
+      debugPrint("closestTopLevelDomain => $closestTopLevelDomain");
+      debugPrint("email closestTopLevelDomain => ${emailParts.topLevelDomain}");
       if (closestTopLevelDomain != null &&
           closestTopLevelDomain != emailParts.topLevelDomain) {
         // The email address may have a misspelled top-level domain; return a suggestion
