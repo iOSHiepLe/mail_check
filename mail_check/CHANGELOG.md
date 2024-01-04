@@ -39,3 +39,6 @@
 
 ## [2.0.3] - 4 Jan 2024
 * Change async function
+
+## [2.0.4] - 4 Jan 2024
+* change address check

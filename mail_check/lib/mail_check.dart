@@ -77,16 +77,16 @@ class MailCheck {
   ];
 
   final List<String> defaultTopLevelDomains = [
-    "co.jp",
-    "co.uk",
-    "com",
-    "net",
-    "org",
-    "info",
-    "edu",
-    "gov",
-    "mil",
-    "ca"
+    // "co.jp",
+    // "co.uk",
+    // "com",
+    // "net",
+    // "org",
+    // "info",
+    // "edu",
+    // "gov",
+    // "mil",
+    // "ca"
   ];
 
   String _regex = "";
@@ -98,7 +98,6 @@ class MailCheck {
       double minDistancePercent = 60.0,
       int Function(String, String)? customDistanceFunction,
       Function(MailCheckResponse)? callBack}) {
-
     allDomains = mergeArrays(
         domainFiles, mergeArrays(defaultDomains, customDomains ?? []));
     List<String> topLevelDomains =
@@ -144,9 +143,9 @@ class MailCheck {
       minDistancePercent,
       domainThreshold,
     );
-    if (allDomains.contains(emailParts.domain)) {
-      return MailCheckResponse(isValidEmail: true);
-    }
+    // if (allDomains.contains(emailParts.domain)) {
+    //   return MailCheckResponse(isValidEmail: true);
+    // }
 
     if (closestDomain != null && closestDomain != emailParts.domain) {
       // The email address closely matches one of the supplied domains; return a suggestion
