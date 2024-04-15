@@ -42,3 +42,6 @@
 
 ## [2.0.4] - 4 Jan 2024
 * change address check
+
+## [2.0.5] - 15 Apr 2024
+* update email domain

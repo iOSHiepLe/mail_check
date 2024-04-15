@@ -73,7 +73,8 @@ class MailCheck {
     "gmx.com",
     "mail.com",
     "outlook.com",
-    "icloud.com"
+    "icloud.com",
+    "fifa.org"
   ];
 
   final List<String> defaultTopLevelDomains = [
